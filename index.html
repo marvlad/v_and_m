@@ -140,6 +140,10 @@ h2{font-family:var(--script);font-weight:400;font-size:clamp(46px,8vw,60px);line
 footer{padding:50px 20px 80px;text-align:center;font-style:italic;color:var(--muted)}
 footer .script{font-size:44px;font-style:normal;margin-top:10px}
 
+/* ---------- Música ---------- */
+.musica-btn{position:fixed;right:18px;bottom:18px;z-index:9;width:52px;height:52px;border-radius:50%;border:1px solid var(--gold);background:var(--paper);color:var(--gold);box-shadow:0 10px 24px rgba(30,60,100,.2);cursor:pointer;display:grid;place-items:center}
+.musica-btn svg{width:20px;height:20px;fill:currentColor}
+
 /* ---------- Animación ---------- */
 .reveal{opacity:0;transform:translateY(22px);transition:opacity 1s ease,transform 1s ease}
 .reveal.in{opacity:1;transform:none}
@@ -321,6 +325,13 @@ footer .script{font-size:44px;font-style:normal;margin-top:10px}
   <p>Con cariño, <span data-cfg="nombre1"></span> y <span data-cfg="nombre2"></span></p>
 </footer>
 
+<!-- Música de fondo desde YouTube (reproductor oculto). Si no hay ID en CONFIG, el botón no aparece. -->
+<div id="ytPlayer" style="position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0;pointer-events:none"></div>
+<button id="musicaBtn" class="musica-btn" type="button" aria-label="Reproducir música" hidden>
+  <svg class="ico-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+  <svg class="ico-pausa" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+</button>
+
 <script>
 /* =========================================================
    DATOS DE LA BODA
@@ -350,6 +361,9 @@ const CONFIG = {
   padrinos: "Karla Chávez Zea y Jesús [apellido]",
   testigos: "Diana Y. Salazar Lazo y Kinyo A. Aduviri Paye",
 
+  // Música: ID del video de YouTube (lo que va después de "v=" en el enlace). Vacío = sin música.
+  musicaYoutubeId: "rtOvBOTyX00",
+
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbwWQ7Lc7L8kMYAeflGQ2Ol-pfuf6ki-qBE9RqUlIs2LGC1wswwNBg8o7SJjRfV46IKi/exec"   // misma URL que en index.html
 };
 /* ========================================================= */
@@ -372,7 +386,42 @@ function abrir() {
   if (sobre.classList.contains('abierto')) return;
   sobre.classList.add('abierto');           // 1) se abre la solapa y sale la tarjeta
   setTimeout(() => cover.classList.add('open'), 2000); // 2) después se muestra la invitación
+  if (ytPlayer) ytPlayer.playVideo();       // 3) la música empieza al abrir (gesto del usuario)
 }
+
+// Música de fondo desde YouTube y botón de reproducir/pausar
+const musicaBtn = $('musicaBtn');
+let ytPlayer = null;
+function actualizarMusica(suena) {
+  musicaBtn.setAttribute('aria-label', suena ? 'Pausar música' : 'Reproducir música');
+  musicaBtn.querySelector('.ico-play').hidden = suena;
+  musicaBtn.querySelector('.ico-pausa').hidden = !suena;
+}
+function cargarMusica() {
+  if (!CONFIG.musicaYoutubeId) return;
+  const s = document.createElement('script');
+  s.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(s);
+}
+window.onYouTubeIframeAPIReady = function () {
+  ytPlayer = new YT.Player('ytPlayer', {
+    height: '1',
+    width: '1',
+    videoId: CONFIG.musicaYoutubeId,
+    playerVars: { loop: 1, playlist: CONFIG.musicaYoutubeId, controls: 0, playsinline: 1 },
+    events: {
+      onReady: () => { musicaBtn.hidden = false; },
+      onError: () => { musicaBtn.hidden = true; },
+      onStateChange: e => actualizarMusica(e.data === YT.PlayerState.PLAYING)
+    }
+  });
+};
+musicaBtn.addEventListener('click', () => {
+  if (!ytPlayer) return;
+  if (ytPlayer.getPlayerState() === YT.PlayerState.PLAYING) ytPlayer.pauseVideo();
+  else ytPlayer.playVideo();
+});
+cargarMusica();
 cover.addEventListener('click', abrir);
 cover.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') abrir(); });
 
