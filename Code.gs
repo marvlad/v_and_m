@@ -1,8 +1,7 @@
 // =====================================================================
 // Pega este código en: Google Sheet > Extensiones > Apps Script
-// Luego: Implementar > Nueva implementación > Tipo: Aplicación web
-//        Ejecutar como: Yo   |   Quién tiene acceso: Cualquier usuario
-// Copia la URL que te da y pégala en CONFIG.appsScriptUrl de index.html
+// Luego: Implementar > Administrar implementaciones > lápiz > Nueva versión > Implementar
+// (así la URL no cambia)
 // =====================================================================
 
 const HOJA = 'Respuestas';
@@ -15,14 +14,15 @@ function doPost(e) {
     let hoja = ss.getSheetByName(HOJA);
     if (!hoja) {
       hoja = ss.insertSheet(HOJA);
-      hoja.appendRow(['Fecha', 'Nombre', 'Asiste']);
+      hoja.appendRow(['Fecha', 'Nombre', 'Asiste', 'Vegetariano']);
       hoja.setFrozenRows(1);
     }
 
     hoja.appendRow([
       new Date(),
       datos.nombre || '',
-      datos.asiste || ''
+      datos.asiste || '',
+      datos.vegetariano || ''
     ]);
 
     return respuesta({ ok: true });
